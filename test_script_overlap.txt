@@ -1,0 +1,5 @@
+NULL,"+"
+0,2,"pecan"
+5,2,"overlap"
+6,3,"walnut"
+13,2,"apricot"
