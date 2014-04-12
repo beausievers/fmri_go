@@ -39,7 +39,7 @@ class TestEvent(unittest.TestCase):
         events = event.EventList()
         events.read_from_file('test_script.txt')
         events.create_null_events()
-        self.assertEqual('"melon"', events.events[5].stim)
+        self.assertEqual('melon', events.events[5].stim)
         
     def test_create_null_events_does_not_create_overlapping_events(self):
         events = event.EventList()
