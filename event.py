@@ -1,59 +1,71 @@
-#TODO: Email Thalia about this: When can we test it, am I thinking this through correctly
-
 from psychopy import core, data, visual, event, sound, gui
 
-def create_event_for_stim(event_start, event_dur, stim):
-    stim_ext = stim[-4:]
+def create_event_for_stim(event_start, event_dur, stim_str, win):
+    stim_ext = stim_str[-4:]
     
     # If the stimulus field begins and ends with double quotes
-    if((stim[0] == '"') and (stim[-1] == '"')):
+    if((stim_str[0] == '"') and (stim_str[-1] == '"')):
         new_event = TextEvent(
             event_start, event_dur, 
-            stim[1:-1] # Strip the quotes 
+            stim_str[1:-1], # Strip the quotes 
+            win
         )   
     elif(stim_ext in ['.mp4', '.mov']):
         new_event = MovieEvent(
-            event_start, event_dur, stim
+            event_start, event_dur, stim_str, win
         ) 
     elif(stim_ext in ['.jpg']):
         new_event = ImageEvent(
-            event_start, event_dur, stim
+            event_start, event_dur, stim_str, win
         )
     return(new_event)
 
-class Event:
-    def __init__(self, start, dur, stim):
+class Event(object):
+    def __init__(self, start, dur, stim_str, win):
         self.start = start
         self.dur = dur
-        self.stim = stim
+        self.stim_str = stim_str
+        self.win = win
         
 class TextEvent(Event):
-    def display(self, win):
-        stimulus = visual.TextStim(win, pos=[0,0], text=self.stim)
-        stimulus.draw()
-        win.flip()
-
-class ImageEvent(Event):
-    def display(self, win):
-        stimulus = visual.ImageStim(win, pos=[0,0], image=self.stim)
-        stimulus.draw()
-        win.flip()
-
-class MovieEvent(Event):
-    def display(self, win, clock, end_time):
-        mov = visual.MovieStim(win, self.stim, 
-                               flipVert=False, flipHoriz=False, loop=False)
+    def __init__(self, start, dur, stim_str, win):
+        super(TextEvent, self).__init__(start, dur, stim_str, win)
+        self.stim = visual.TextStim(win, pos=[0,0], text=self.stim_str)
+    
+    def display(self):
+        self.stim.draw()
+        self.win.flip()
         
+class ImageEvent(Event):
+    def __init__(self, start, dur, stim_str, win):
+        super(ImageEvent, self).__init__(start, dur, stim_str, win)
+        self.stim = visual.ImageStim(self.win, pos=[0,0], image=self.stim_str)
+    
+    def display(self):
+        self.stim.draw()
+        self.win.flip()
+
+# Note: If a single movie is loaded multiple times in a script, multiple
+# MovieEvent objects will be created, each occupying their own memory location.
+# This could possibly get expensive. Consider releasing the objects after use?
+class MovieEvent(Event):
+    def __init__(self, start, dur, stim_str, win):
+        super(MovieEvent, self).__init__(start, dur, stim_str, win)
+        self.stim = visual.MovieStim(self.win, self.stim_str,
+                                    flipVert=False, flipHoriz=False, loop=False)
+        
+    def display(self, clock, end_time):
         # Terminate and hand control back to fmri_go.py if either the movie ends
         # or we run out of time on the global clock.
-        while((mov.status != visual.FINISHED) and (clock.getTime() < end_time)):
-            mov.draw()
-            win.flip()
+        while((self.stim.status != visual.FINISHED) and (clock.getTime() < end_time)):
+            self.stim.draw()
+            self.win.flip()
 
 class EventList:
-    def __init__(self):
+    def __init__(self, win):
         self.events = []
         self.null_event = None
+        self.win = win
         
     def read_from_file(self, path):
         # Parse the script file and populate the global event array
@@ -65,7 +77,7 @@ class EventList:
             else:
                 event_start = float(splitline[0])
                 event_dur = float(splitline[1])
-                new_event = create_event_for_stim(event_start, event_dur, splitline[2])
+                new_event = create_event_for_stim(event_start, event_dur, splitline[2], self.win)
                 self.events.append(new_event)
                                         
                 # Should guarantee that event list is sorted by start time
@@ -87,7 +99,7 @@ class EventList:
             null_dur = second_event.start - null_start
             
             #new_null_event = Event(null_start, null_dur, "NULL")
-            new_null_event = create_event_for_stim(null_start, null_dur, self.null_event)
+            new_null_event = create_event_for_stim(null_start, null_dur, self.null_event, self.win)
             
             if(new_null_event.dur < 0):
                 print "WARNING: Overlapping events detected while creating null events"

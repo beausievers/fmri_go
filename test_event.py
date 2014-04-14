@@ -1,3 +1,4 @@
+from psychopy import core, data, visual, event, sound, gui
 import event
 import unittest
 
@@ -7,7 +8,8 @@ class TestEvent(unittest.TestCase):
         pass
     
     def test_create_null_events_creates_correct_start_times(self):
-        events = event.EventList()
+        win = visual.Window([800, 600], monitor='testMonitor')
+        events = event.EventList(win)
         events.read_from_file('test_script.txt')
         events.create_null_events()
         
@@ -30,30 +32,35 @@ class TestEvent(unittest.TestCase):
         self.assertEqual(9, events.events[3].start)
     
     def test_create_null_events_creates_correct_durations(self):
-        events = event.EventList()
+        win = visual.Window([800, 600], monitor='testMonitor')
+        events = event.EventList(win)
         events.read_from_file('test_script.txt')
         events.create_null_events()
         self.assertEqual(4, events.events[3].dur)
         
     def test_create_null_events_no_null_between_adjacent_non_nulls(self):
-        events = event.EventList()
+        win = visual.Window([800, 600], monitor='testMonitor')
+        events = event.EventList(win)
         events.read_from_file('test_script.txt')
         events.create_null_events()
-        self.assertEqual('melon', events.events[5].stim)
+        self.assertEqual('melon', events.events[5].stim_str)
         
     def test_create_null_events_does_not_create_overlapping_events(self):
-        events = event.EventList()
+        win = visual.Window([800, 600], monitor='testMonitor')
+        events = event.EventList(win)
         events.read_from_file('test_script.txt')
         events.create_null_events()
         self.assertFalse(events.has_overlapping_events())
         
     def test_has_overlapping_events_finds_overlapping_events_before_null_creation(self):
-        events = event.EventList()
+        win = visual.Window([800, 600], monitor='testMonitor')
+        events = event.EventList(win)
         events.read_from_file('test_script_overlap.txt')
         self.assertTrue(events.has_overlapping_events())
         
     def test_has_overlapping_events_finds_overlapping_events_after_null_creation(self):
-        events = event.EventList()
+        win = visual.Window([800, 600], monitor='testMonitor')
+        events = event.EventList(win)
         events.read_from_file('test_script_overlap.txt')
         events.create_null_events()
         self.assertTrue(events.has_overlapping_events())

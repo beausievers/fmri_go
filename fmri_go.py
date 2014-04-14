@@ -12,14 +12,10 @@ from event import *
 win = visual.Window([800, 600], monitor='testMonitor')
 clock = core.Clock()
 
-def display_text(t, win):
-    stimulus = visual.TextStim(win, pos=[0,0], text=t)
-    stimulus.draw()
-    win.flip()
-
 # This global will hold all of the events we will display
-events = EventList()
-events.read_from_file('script.txt')
+# The EventList needs to know about the Window so we can preload the stimuli
+events = EventList(win)
+events.read_from_file('movietestscript.txt')
 
 if(events.has_overlapping_events()):
     print("WARNING: Overlapping events detected in input")
@@ -32,7 +28,7 @@ if(events.has_overlapping_events()):
 # Specify the TR duration
 tr_dur = 2.0
 
-# Find the duration of the event list in volumes
+# Find the duration of the event list in TRs/volumes
 num_vols = math.ceil(events.dur() / tr_dur)
 
 # This is a configuration object for PsychoPy's launchScan
@@ -44,8 +40,9 @@ fmri_settings = {
     'sound': False       # play sound in test mode
 }
 
-# This should set it up so the experiment starts in sync with the first 
-# scanner trigger
+# The experiment starts in sync with the first scanner trigger.
+# To test, set mode='Test'
+# To scan, set mode='Scan'
 vol = launchScan(win, fmri_settings, globalClock=clock, mode='Test')
 
 # This script uses "non-slip" timing, presenting stimuli relative to the
@@ -62,15 +59,15 @@ for event in events.events:
         # We pass the global clock and the end_time to the MovieEvent to 
         # handle timing. The MovieEvent will cut off the movie early if the
         # movie file is longer than the duration specified in the script file.
-        event.display(win, clock, end_time)
+        event.display(clock, end_time)
         
         # If a MovieEvent ends earlier than the duration specified in the script
         # file, we display a null event for the remaining time in order to
         # maintain continuity (no blank screens).
-        post_movie_null = create_event_for_stim(None, None, events.null_event)
+        post_movie_null = create_event_for_stim(None, None, events.null_event, win)
         while(clock.getTime() < end_time):
-            post_movie_null.display(win)
+            post_movie_null.display()
             
     else:    
         while(clock.getTime() < end_time):
-            event.display(win)
+            event.display()
