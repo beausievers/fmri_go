@@ -10,11 +10,11 @@ import math
 
 from event import *
 
-#win = visual.Window([1280, 720], monitor='testMonitor', screen=0, fullscr=False)
+win = visual.Window([1280, 720], monitor='testMonitor', screen=0, fullscr=False)
 
 # At DBIC, with Mac OS X, the scanner projector wants to be 1280x1024 and 60Hz
 # Use the following line to run this experiment fullscreen on a 2nd monitor:
-win = visual.Window([1280, 1024], monitor='testMonitor', screen=1, fullscr=True)
+#win = visual.Window([1280, 1024], monitor='testMonitor', screen=1, fullscr=True)
 clock = core.Clock()
 
 loading_message = visual.TextStim(win, pos=[0,0], text="Loading...")
@@ -24,7 +24,7 @@ win.flip()
 # This global will hold all of the events we will display
 # The EventList needs to know about the Window so we can preload the stimuli
 events = EventList(win)
-events.read_from_file('localizer_5.txt')
+events.read_from_file('overlap_debug.txt')
 
 if(events.has_overlapping_events()):
     print("WARNING: Overlapping events detected in input")
@@ -38,7 +38,7 @@ if(events.has_overlapping_events()):
 tr_dur = 1.0
 
 # Find the duration of the event list in TRs/volumes
-num_vols = math.ceil(events.dur() / tr_dur)
+num_vols = math.ceil(float(events.dur()) / tr_dur)
 
 # This is a configuration object for PsychoPy's launchScan
 fmri_settings = {
@@ -52,7 +52,7 @@ fmri_settings = {
 # The experiment starts in sync with the first scanner trigger.
 # To test, set mode='Test'
 # To scan, set mode='Scan'
-#vol = launchScan(win, fmri_settings, globalClock=clock, mode='Test')
+vol = launchScan(win, fmri_settings, globalClock=clock, mode='Test')
 
 # Some approaches to waiting for the scanner trigger.
 
@@ -61,17 +61,17 @@ fmri_settings = {
 # It's necessary to install drivers for the KeySpan 19HS
 
 # 1. The Swaroop:
-swaroop_tr = True
-wait_stim = visual.TextStim(win, pos=[0,0], text="Waiting for scanner")
-if(swaroop_tr):
-    # Wait till trigger
-    ser = serial.Serial('/dev/tty.USA19H142P1.1', 115200, timeout = .0001)
-    ser.flushInput()
-    trigger = ''
-    while trigger != fmri_settings['sync']:
-        wait_stim.draw()
-        win.flip()
-        trigger = ser.read()
+#swaroop_tr = True
+#wait_stim = visual.TextStim(win, pos=[0,0], text="Waiting for scanner")
+#if(swaroop_tr):
+#    # Wait till trigger
+#    ser = serial.Serial('/dev/tty.USA19H142P1.1', 115200, timeout = .0001)
+#    ser.flushInput()
+#    trigger = ''
+#    while trigger != fmri_settings['sync']:
+#        wait_stim.draw()
+#        win.flip()
+#        trigger = ser.read()
 # Continue your presentation.
 
 # Reset the clock after getting the scanner trigger

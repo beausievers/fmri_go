@@ -1,5 +1,6 @@
 from psychopy import core, data, visual, event, sound, gui
 import os
+import decimal
 
 def create_event_for_stim(event_start, event_dur, stim_str, win):
     filename, stim_ext = os.path.splitext(stim_str)
@@ -113,8 +114,10 @@ class EventList:
             if(splitline[0] == "NULL"):
                 self.null_event = splitline[1]
             else:
-                event_start = float(splitline[0])
-                event_dur = float(splitline[1])
+                #event_start = float(splitline[0])
+                #event_dur = float(splitline[1])
+                event_start = decimal.Decimal(splitline[0])
+                event_dur = decimal.Decimal(splitline[1])
                 new_event = create_event_for_stim(event_start, event_dur, splitline[2], self.win)
                 self.events.append(new_event)
                                         
@@ -139,12 +142,14 @@ class EventList:
             #new_null_event = Event(null_start, null_dur, "NULL")
             new_null_event = create_event_for_stim(null_start, null_dur, self.null_event, self.win)
             
-            if(new_null_event.dur < -0.0001):
+            #if(new_null_event.dur < -0.0001):
+            if(new_null_event.dur < 0):
                 print "WARNING: Overlapping events detected while creating null events"
                 print "new_null_event.dur = {0}".format(new_null_event.dur)
             
             # Append the null to a separate list
-            if(new_null_event.dur > 0.0001):
+            #if(new_null_event.dur > 0.0001):
+            if(new_null_event.dur > 0):
                 new_nulls.append(new_null_event)        
     
         # Append all the new nulls to the event list
