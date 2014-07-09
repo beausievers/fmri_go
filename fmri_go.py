@@ -4,18 +4,27 @@
 from psychopy import core, data, visual, event, sound, gui
 from psychopy.hardware.emulator import launchScan
 
+import serial
 import random
 import math
 
 from event import *
 
-win = visual.Window([800, 600], monitor='testMonitor')
+#win = visual.Window([1280, 720], monitor='testMonitor', screen=0, fullscr=False)
+
+# At DBIC, with Mac OS X, the scanner projector wants to be 1280x1024 and 60Hz
+# Use the following line to run this experiment fullscreen on a 2nd monitor:
+win = visual.Window([1280, 1024], monitor='testMonitor', screen=1, fullscr=True)
 clock = core.Clock()
+
+loading_message = visual.TextStim(win, pos=[0,0], text="Loading...")
+loading_message.draw()
+win.flip()
 
 # This global will hold all of the events we will display
 # The EventList needs to know about the Window so we can preload the stimuli
 events = EventList(win)
-events.read_from_file('movietestscript.txt')
+events.read_from_file('localizer_5.txt')
 
 if(events.has_overlapping_events()):
     print("WARNING: Overlapping events detected in input")
@@ -26,7 +35,7 @@ if(events.has_overlapping_events()):
     print("WARNING: Overlapping events detected after creating null events")
     
 # Specify the TR duration
-tr_dur = 2.0
+tr_dur = 1.0
 
 # Find the duration of the event list in TRs/volumes
 num_vols = math.ceil(events.dur() / tr_dur)
@@ -43,7 +52,30 @@ fmri_settings = {
 # The experiment starts in sync with the first scanner trigger.
 # To test, set mode='Test'
 # To scan, set mode='Scan'
-vol = launchScan(win, fmri_settings, globalClock=clock, mode='Test')
+#vol = launchScan(win, fmri_settings, globalClock=clock, mode='Test')
+
+# Some approaches to waiting for the scanner trigger.
+
+# Swaroop used: tty.USA19H62P1.1
+# I have: tty.USA19H142P1.1. Lumina settings: 115200 baud, ASCII.
+# It's necessary to install drivers for the KeySpan 19HS
+
+# 1. The Swaroop:
+swaroop_tr = True
+wait_stim = visual.TextStim(win, pos=[0,0], text="Waiting for scanner")
+if(swaroop_tr):
+    # Wait till trigger
+    ser = serial.Serial('/dev/tty.USA19H142P1.1', 115200, timeout = .0001)
+    ser.flushInput()
+    trigger = ''
+    while trigger != fmri_settings['sync']:
+        wait_stim.draw()
+        win.flip()
+        trigger = ser.read()
+# Continue your presentation.
+
+# Reset the clock after getting the scanner trigger
+clock.reset()
 
 # This script uses "non-slip" timing, presenting stimuli relative to the
 # clock time when the first scanner trigger was received. This should ensure
@@ -67,7 +99,15 @@ for event in events.events:
         post_movie_null = create_event_for_stim(None, None, events.null_event, win)
         while(clock.getTime() < end_time):
             post_movie_null.display()
-            
+    elif(event.__class__ == SoundEvent):
+        # SoundEvents also need to know the end_time so the sound can be cut off
+        # early if the sound file is too long.
+        
+        # We also need a null event to draw to the screen while we're playing
+        # the sound
+        sound_null = create_event_for_stim(None, None, events.null_event, win)
+        
+        event.display(clock, end_time, sound_null)
     else:    
         while(clock.getTime() < end_time):
             event.display()
