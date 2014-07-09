@@ -1,23 +1,37 @@
 from psychopy import core, data, visual, event, sound, gui
+import os
 
 def create_event_for_stim(event_start, event_dur, stim_str, win):
-    stim_ext = stim_str[-4:]
-    
+    filename, stim_ext = os.path.splitext(stim_str)
+
     # If the stimulus field begins and ends with double quotes
     if((stim_str[0] == '"') and (stim_str[-1] == '"')):
         new_event = TextEvent(
             event_start, event_dur, 
             stim_str[1:-1], # Strip the quotes 
             win
-        )   
+        )
+    elif(stim_str == "redcross"):  # This is a hack and should be removed
+        new_event = TextEvent(
+            event_start, event_dur,
+            "+",
+            win,
+            '#FF0000'
+        )
     elif(stim_ext in ['.mp4', '.mov']):
         new_event = MovieEvent(
             event_start, event_dur, stim_str, win
         ) 
-    elif(stim_ext in ['.jpg']):
+    elif(stim_ext in ['.jpg', '.jpeg', '.tif']):
         new_event = ImageEvent(
             event_start, event_dur, stim_str, win
         )
+    elif(stim_ext in ['.wav', '.aif']):
+        new_event = SoundEvent(
+            event_start, event_dur, stim_str, win
+        )
+    else:
+        print("Confusing stim string: {0}".format(stim_str))
     return(new_event)
 
 class Event(object):
@@ -28,9 +42,10 @@ class Event(object):
         self.win = win
         
 class TextEvent(Event):
-    def __init__(self, start, dur, stim_str, win):
+    def __init__(self, start, dur, stim_str, win, text_color='#FFFFFF'):
         super(TextEvent, self).__init__(start, dur, stim_str, win)
-        self.stim = visual.TextStim(win, pos=[0,0], text=self.stim_str)
+        self.stim = visual.TextStim(win, pos=[0,0], text=self.stim_str, 
+                                    color=text_color, wrapWidth=2)
     
     def display(self):
         self.stim.draw()
@@ -44,15 +59,38 @@ class ImageEvent(Event):
     def display(self):
         self.stim.draw()
         self.win.flip()
+        
+# As with movies, PsychoPy depends on avbin for media decoding, and it likes
+# some audio files better than others. Certain AIFF files don't work.
 
+class SoundEvent(Event):
+    def __init__(self, start, dur, stim_str, win):
+        super(SoundEvent, self).__init__(start, dur, stim_str, win)
+        self.stim = sound.Sound(stim_str)
+        
+    def display(self, clock, end_time, on_screen):
+        self.stim.play()
+        while(clock.getTime() < end_time):
+            on_screen.display()
+        self.stim.stop()
+        
 # Note: If a single movie is loaded multiple times in a script, multiple
 # MovieEvent objects will be created, each occupying their own memory location.
 # This could possibly get expensive. Consider releasing the objects after use?
+# Consider reusing objects for events that are loaded multiple times?
+
+# Note: PsychoPy depends on avbin for media decoding, and avbin likes some
+# movies and not others. I experienced crashing when playing movies with empty
+# audio tracks. Also experienced crashing when playing movies with certain
+# codec/wrapper combinations. It took some trial and error to get things 
+# working smoothly.
+
+# TODO: Figure out exactly what's going on with the horizontal flipping.
 class MovieEvent(Event):
     def __init__(self, start, dur, stim_str, win):
         super(MovieEvent, self).__init__(start, dur, stim_str, win)
         self.stim = visual.MovieStim(self.win, self.stim_str,
-                                    flipVert=False, flipHoriz=False, loop=False)
+                                    flipVert=False, flipHoriz=True, loop=False)
         
     def display(self, clock, end_time):
         # Terminate and hand control back to fmri_go.py if either the movie ends
@@ -101,11 +139,12 @@ class EventList:
             #new_null_event = Event(null_start, null_dur, "NULL")
             new_null_event = create_event_for_stim(null_start, null_dur, self.null_event, self.win)
             
-            if(new_null_event.dur < 0):
+            if(new_null_event.dur < -0.0001):
                 print "WARNING: Overlapping events detected while creating null events"
+                print "new_null_event.dur = {0}".format(new_null_event.dur)
             
             # Append the null to a separate list
-            if(new_null_event.dur > 0):
+            if(new_null_event.dur > 0.0001):
                 new_nulls.append(new_null_event)        
     
         # Append all the new nulls to the event list
