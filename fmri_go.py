@@ -37,42 +37,48 @@ if(events.has_overlapping_events()):
 # Specify the TR duration
 tr_dur = 1.0
 
-# Find the duration of the event list in TRs/volumes
-num_vols = math.ceil(float(events.dur()) / tr_dur)
+# Specify our location
+# (For now this just controls how we handle receipt of the _first_ 
+#  trigger, but in the future it should control how we handle all 
+#  scanner triggers.)
+location = "simulation"
+#location = "dbic"
 
-# This is a configuration object for PsychoPy's launchScan
-fmri_settings = {
-    'TR': tr_dur,        # duration (sec) per volume
-    'volumes': num_vols, # number of whole-brain 3D volumes / frames
-    'sync': '5',         # character to use as the sync timing event;
-    'skip': 0,           # number of vols w/o sync pulse at start of scan
-    'sound': False       # play sound in test mode
-}
+if(location == "simulation"):
+    # Find the duration of the event list in TRs/volumes
+    num_vols = math.ceil(float(events.dur()) / tr_dur)
 
-# The experiment starts in sync with the first scanner trigger.
-# To test, set mode='Test'
-# To scan, set mode='Scan'
-vol = launchScan(win, fmri_settings, globalClock=clock, mode='Test')
+    # This is a configuration object for PsychoPy's launchScan
+    fmri_settings = {
+        'TR': tr_dur,        # duration (sec) per volume
+        'volumes': num_vols, # number of whole-brain 3D volumes / frames
+        'sync': '5',         # character to use as the sync timing event;
+        'skip': 0,           # number of vols w/o sync pulse at start of scan
+        'sound': False       # play sound in test mode
+    }
 
-# Some approaches to waiting for the scanner trigger.
+    # The experiment starts in sync with the first scanner trigger.
+    # To test, set mode='Test'
+    # To scan, set mode='Scan'
+    vol = launchScan(win, fmri_settings, globalClock=clock, mode='Test')
+elif(location == "dbic"):
+    # This is how the scanner trigger works in the DBIC:
+    # Swaroop used: tty.USA19H62P1.1
+    # I have: tty.USA19H142P1.1. Lumina settings: 115200 baud, ASCII.
+    # Parag observed a changing mount point in /dev, so if this doesn't work
+    # just take a look and see what's there.
+    # It's necessary to install drivers for the KeySpan 19HS.
+    wait_stim = visual.TextStim(win, pos=[0,0], text="Waiting for scanner")
+    if(swaroop_tr):
+        # Wait till trigger
+        ser = serial.Serial('/dev/tty.USA19H142P1.1', 115200, timeout = .0001)
+        ser.flushInput()
+        trigger = ''
+        while trigger != fmri_settings['sync']:
+            wait_stim.draw()
+            win.flip()
+            trigger = ser.read()
 
-# Swaroop used: tty.USA19H62P1.1
-# I have: tty.USA19H142P1.1. Lumina settings: 115200 baud, ASCII.
-# It's necessary to install drivers for the KeySpan 19HS
-
-# 1. The Swaroop:
-#swaroop_tr = True
-#wait_stim = visual.TextStim(win, pos=[0,0], text="Waiting for scanner")
-#if(swaroop_tr):
-#    # Wait till trigger
-#    ser = serial.Serial('/dev/tty.USA19H142P1.1', 115200, timeout = .0001)
-#    ser.flushInput()
-#    trigger = ''
-#    while trigger != fmri_settings['sync']:
-#        wait_stim.draw()
-#        win.flip()
-#        trigger = ser.read()
-# Continue your presentation.
 
 # Reset the clock after getting the scanner trigger
 clock.reset()
