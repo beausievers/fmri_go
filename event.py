@@ -30,7 +30,7 @@ def create_event_for_stim(event_strings, win):
         if(stim_ext in ['.mp4', '.mov']):
             new_event = MovieEvent(
                 event_start, event_dur, stim_strings[0], win
-            ) 
+            )
         elif(stim_ext in ['.jpg', '.jpeg', '.tif']):
             new_event = ImageEvent(
                 event_start, event_dur, stim_strings[0], win

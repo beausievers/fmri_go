@@ -24,7 +24,7 @@ win.flip()
 # This global will hold all of the events we will display
 # The EventList needs to know about the Window so we can preload the stimuli
 events = EventList(win)
-events.read_from_file('localizer_1.txt')
+events.read_from_file('clean_run_1.txt')
 
 if(events.has_overlapping_events()):
     print("WARNING: Overlapping events detected in input")
@@ -83,9 +83,9 @@ clock.reset()
 # http://www.psychopy.org/general/timing/nonSlipTiming.html
 end_time = 0            
 for event in events.events:
-    print event.stim
-    end_time += event.dur
-    print end_time
+    #print event.stim
+    #end_time += event.dur
+    #print end_time
     
     if(event.__class__ == MovieEvent):
         # We pass the global clock and the end_time to the MovieEvent to 
@@ -96,7 +96,7 @@ for event in events.events:
         # If a MovieEvent ends earlier than the duration specified in the script
         # file, we display a null event for the remaining time in order to
         # maintain continuity (no blank screens).
-        post_movie_null = create_event_for_stim(None, None, events.null_event, win)
+        post_movie_null = create_event_for_stim([None, None, events.null_event], win)
         while(clock.getTime() < end_time):
             post_movie_null.display()
     elif(event.__class__ == SoundEvent):
@@ -105,7 +105,7 @@ for event in events.events:
         
         # We also need a null event to draw to the screen while we're playing
         # the sound
-        sound_null = create_event_for_stim(None, None, events.null_event, win)
+        sound_null = create_event_for_stim([None, None, events.null_event], win)
         
         event.display(clock, end_time, sound_null)
     else:    
