@@ -3,11 +3,17 @@ import os
 import decimal
 
 def create_event_for_stim(event_strings, win):    
-    print(event_strings)
-    event_start = decimal.Decimal(event_strings[0])
-    event_dur = decimal.Decimal(event_strings[1])
+    if(event_strings[0] != None):
+        event_start = decimal.Decimal(event_strings[0])
+    else:
+        event_start = None
+    
+    if(event_strings[1] != None):
+        event_dur = decimal.Decimal(event_strings[1])
+    else:
+        event_dur = None
+        
     stim_strings = event_strings[2:]
-    print(stim_strings)
     
     # Are we dealing with a text stim or a file stim?
     # If the stim begins and ends with double quotes, then it's text.

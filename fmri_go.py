@@ -83,9 +83,9 @@ clock.reset()
 # http://www.psychopy.org/general/timing/nonSlipTiming.html
 end_time = 0            
 for event in events.events:
-    #print event.stim
-    #end_time += event.dur
-    #print end_time
+    print event.stim
+    end_time += event.dur
+    print end_time
     
     if(event.__class__ == MovieEvent):
         # We pass the global clock and the end_time to the MovieEvent to 
