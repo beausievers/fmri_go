@@ -2,37 +2,48 @@ from psychopy import core, data, visual, event, sound, gui
 import os
 import decimal
 
-def create_event_for_stim(event_start, event_dur, stim_str, win):
-    filename, stim_ext = os.path.splitext(stim_str)
-
-    # If the stimulus field begins and ends with double quotes
-    if((stim_str[0] == '"') and (stim_str[-1] == '"')):
+def create_event_for_stim(event_strings, win):    
+    print(event_strings)
+    event_start = decimal.Decimal(event_strings[0])
+    event_dur = decimal.Decimal(event_strings[1])
+    stim_strings = event_strings[2:]
+    print(stim_strings)
+    
+    # Are we dealing with a text stim or a file stim?
+    # If the stim begins and ends with double quotes, then it's text.
+    if((stim_strings[0][0] == '"') and (stim_strings[0][-1] == '"')):
+        # If the following field begins with a hash, then it's colored text
+        if(len(stim_strings) == 2 and stim_strings[1][0]=='#'):
+            text_color = stim_strings[1]
+        else:
+            text_color = '#FFFFFF'
         new_event = TextEvent(
             event_start, event_dur, 
-            stim_str[1:-1], # Strip the quotes 
-            win
-        )
-    elif(stim_str == "redcross"):  # This is a hack and should be removed
-        new_event = TextEvent(
-            event_start, event_dur,
-            "+",
+            stim_strings[0][1:-1], # Strip the quotes 
             win,
-            '#FF0000'
+            text_color
         )
-    elif(stim_ext in ['.mp4', '.mov']):
-        new_event = MovieEvent(
-            event_start, event_dur, stim_str, win
-        ) 
-    elif(stim_ext in ['.jpg', '.jpeg', '.tif']):
-        new_event = ImageEvent(
-            event_start, event_dur, stim_str, win
-        )
-    elif(stim_ext in ['.wav', '.aif']):
-        new_event = SoundEvent(
-            event_start, event_dur, stim_str, win
-        )
+    # If we do not begin and end with quotes, then we assume we are dealing
+    # with a file stim (this if/elif structure is inelegant).
+    elif((stim_strings[0][0] != '"') and (stim_strings[0][-1] != '"')):
+        filename, stim_ext = os.path.splitext(stim_strings[0])
+        if(stim_ext in ['.mp4', '.mov']):
+            new_event = MovieEvent(
+                event_start, event_dur, stim_strings[0], win
+            ) 
+        elif(stim_ext in ['.jpg', '.jpeg', '.tif']):
+            new_event = ImageEvent(
+                event_start, event_dur, stim_strings[0], win
+            )
+        elif(stim_ext in ['.wav', '.aif']):
+            new_event = SoundEvent(
+                event_start, event_dur, stim_strings[0], win
+            )
+        else:
+            print("stim_ext not found: {0}".format(stim_ext))
+            print("stim_strings: {0}".format(stim_strings))
     else:
-        print("Confusing stim string: {0}".format(stim_str))
+        print("Confusing stim_strings: {0}".format(stim_strings))
     return(new_event)
 
 class Event(object):
@@ -114,11 +125,7 @@ class EventList:
             if(splitline[0] == "NULL"):
                 self.null_event = splitline[1]
             else:
-                #event_start = float(splitline[0])
-                #event_dur = float(splitline[1])
-                event_start = decimal.Decimal(splitline[0])
-                event_dur = decimal.Decimal(splitline[1])
-                new_event = create_event_for_stim(event_start, event_dur, splitline[2], self.win)
+                new_event = create_event_for_stim(splitline, self.win)
                 self.events.append(new_event)
                                         
                 # Should guarantee that event list is sorted by start time
@@ -139,16 +146,13 @@ class EventList:
             null_start = first_event.start + first_event.dur
             null_dur = second_event.start - null_start
             
-            #new_null_event = Event(null_start, null_dur, "NULL")
-            new_null_event = create_event_for_stim(null_start, null_dur, self.null_event, self.win)
+            new_null_event = create_event_for_stim([null_start, null_dur, self.null_event], self.win)
             
-            #if(new_null_event.dur < -0.0001):
             if(new_null_event.dur < 0):
                 print "WARNING: Overlapping events detected while creating null events"
                 print "new_null_event.dur = {0}".format(new_null_event.dur)
             
             # Append the null to a separate list
-            #if(new_null_event.dur > 0.0001):
             if(new_null_event.dur > 0):
                 new_nulls.append(new_null_event)        
     

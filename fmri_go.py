@@ -24,7 +24,7 @@ win.flip()
 # This global will hold all of the events we will display
 # The EventList needs to know about the Window so we can preload the stimuli
 events = EventList(win)
-events.read_from_file('overlap_debug.txt')
+events.read_from_file('localizer_1.txt')
 
 if(events.has_overlapping_events()):
     print("WARNING: Overlapping events detected in input")
