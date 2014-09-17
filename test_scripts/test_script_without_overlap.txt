@@ -1,0 +1,8 @@
+NULL,"+"
+0,0.5,"pecan"
+1,0.5,"pecan"
+2,0.5,"pecan"
+3,0.5,"pecan"
+3.5,0.5,"walnut"
+4,0.5,"pecan"
+4.5,0.5,"walnut"
