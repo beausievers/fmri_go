@@ -10,7 +10,7 @@ class TestEvent(unittest.TestCase):
     def test_create_null_events_creates_correct_start_times(self):
         win = visual.Window([800, 600], monitor='testMonitor')
         events = event.EventList(win)
-        events.read_from_file('test_script.txt')
+        events.read_from_file('test_scripts/test_script.txt')
         events.create_null_events()
         
         #NULL,"+"
@@ -34,34 +34,34 @@ class TestEvent(unittest.TestCase):
     def test_create_null_events_creates_correct_durations(self):
         win = visual.Window([800, 600], monitor='testMonitor')
         events = event.EventList(win)
-        events.read_from_file('test_script.txt')
+        events.read_from_file('test_scripts/test_script.txt')
         events.create_null_events()
         self.assertEqual(4, events.events[3].dur)
         
     def test_create_null_events_no_null_between_adjacent_non_nulls(self):
         win = visual.Window([800, 600], monitor='testMonitor')
         events = event.EventList(win)
-        events.read_from_file('test_script.txt')
+        events.read_from_file('test_scripts/test_script.txt')
         events.create_null_events()
         self.assertEqual('melon', events.events[5].stim_str)
         
     def test_create_null_events_does_not_create_overlapping_events(self):
         win = visual.Window([800, 600], monitor='testMonitor')
         events = event.EventList(win)
-        events.read_from_file('test_script_without_overlap.txt')
+        events.read_from_file('test_scripts/test_script_without_overlap.txt')
         events.create_null_events()
         self.assertFalse(events.has_overlapping_events())
         
     def test_has_overlapping_events_finds_overlapping_events_before_null_creation(self):
         win = visual.Window([800, 600], monitor='testMonitor')
         events = event.EventList(win)
-        events.read_from_file('test_script_with_overlap.txt')
+        events.read_from_file('test_scripts/test_script_with_overlap.txt')
         self.assertTrue(events.has_overlapping_events())
         
     def test_has_overlapping_events_finds_overlapping_events_after_null_creation(self):
         win = visual.Window([800, 600], monitor='testMonitor')
         events = event.EventList(win)
-        events.read_from_file('test_script_with_overlap.txt')
+        events.read_from_file('test_scripts/test_script_with_overlap.txt')
         events.create_null_events()
         self.assertTrue(events.has_overlapping_events())
         
