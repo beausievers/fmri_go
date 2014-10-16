@@ -2,7 +2,12 @@ from psychopy import core, data, visual, event, sound, gui
 import os
 import decimal
 
-def create_event_for_stim(event_strings, win):    
+def create_event_for_stim(event_strings, win):
+    """
+    Takes an array of 'event strings,' usually parsed from an experiment
+    script, and figures out what class of event is appropriate (e.g., TextEvent,
+    ImageEvent, etc.), creates the correct event, and returns it.
+    """  
     if(event_strings[0] != None):
         event_start = decimal.Decimal(event_strings[0])
     else:
@@ -69,6 +74,10 @@ class TextEvent(Event):
         self.stim.draw()
         self.win.flip()
         
+class MultiPositionedTextEvent(Event):
+    def __init__(self, start, dur, stim_strs, positions, win):
+        super(MultiPositionedTextEvent, self).__init__(start, dur, stim)
+        
 class ImageEvent(Event):
     def __init__(self, start, dur, stim_str, win):
         super(ImageEvent, self).__init__(start, dur, stim_str, win)
@@ -124,7 +133,7 @@ class EventList:
         self.win = win
         
     def read_from_file(self, path):
-        # Parse the script file and populate the global event array
+        """Parse the script file and populate the global event array"""
         lines = [line.strip() for line in open(path)]
         for line in lines:
             splitline = line.split(',')
@@ -133,8 +142,6 @@ class EventList:
             else:
                 new_event = create_event_for_stim(splitline, self.win)
                 self.events.append(new_event)
-                                        
-                # Should guarantee that event list is sorted by start time
                 self.sort_by_start()
         
     def sort_by_start(self):
