@@ -42,7 +42,7 @@ def create_event_for_stim(event_strings, win):
             new_event = MovieEvent(
                 event_start, event_dur, stim_strings[0], win
             )
-        elif(stim_ext in ['.jpg', '.jpeg', '.tif']):
+        elif(stim_ext in ['.jpg', '.jpeg', '.tif', '.png']):
             new_event = ImageEvent(
                 event_start, event_dur, stim_strings[0], win
             )
@@ -112,12 +112,11 @@ class SoundEvent(Event):
 # codec/wrapper combinations. It took some trial and error to get things 
 # working smoothly.
 
-# TODO: Figure out exactly what's going on with the horizontal flipping.
 class MovieEvent(Event):
     def __init__(self, start, dur, stim_str, win):
         super(MovieEvent, self).__init__(start, dur, stim_str, win)
         self.stim = visual.MovieStim(self.win, self.stim_str,
-                                    flipVert=False, flipHoriz=True, loop=False)
+                                    flipVert=False, loop=False)
         
     def display(self, clock, end_time):
         # Terminate and hand control back to fmri_go.py if either the movie ends
