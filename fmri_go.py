@@ -11,13 +11,14 @@ import random
 import math
 import multiprocessing
 import time
+import sys
 
 from event import *
 
 # This is a configuration object for PsychoPy's LaunchScan
 # that determines what the scanner trigger value should be  
 fmri_settings = {
-    'TR': 1.0,           # duration (sec) per volume
+    'TR': 3.0,           # duration (sec) per volume
     'volumes': None,     # number of whole-brain 3D volumes / frames
     'sync': '5',         # character to use as the sync timing event;
     'skip': 0,           # number of vols w/o sync pulse at start of scan
@@ -75,6 +76,8 @@ def fake_scanner_serial_output():
     
     This could be dramatically improved and currently drifts quite a bit from
     TR to TR. See psychopy.hardware.emulator.SyncGenerator.
+    
+    https://github.com/psychopy/psychopy/blob/master/psychopy/hardware/emulator.py
     """
     global fmri_settings
     print("Running fake scanner serial output...")
@@ -127,20 +130,52 @@ def run_experiment():
     global serial_settings
     global fmri_settings
     
-    id_dialog = psy.gui.Dlg(title="Enter Participant ID")
-    id_dialog.addField("Participant ID:")
-    id_dialog.show()
-    if(id_dialog.OK):
-        subject_id = id_dialog.data[0]
-    else:
-        subject_id = 'no_id_{0}'.format(time.time())
+    # These are not "group" fields because of a bug in wxWidgets:
+    # https://groups.google.com/forum/#!topic/psychopy-users/0wVjYIcXQsk
+    # This is a sub-optimal workaround to-be-improved-upon.
+    config_dialog = psy.gui.Dlg(title="Configure Run")
+    config_dialog.addField("Participant accession number:", "15nov14ej")
+    config_dialog.addField("Run number:")
+    config_dialog.addField("Location mode (dbic/serial/psychopy):", "dbic")
+    config_dialog.addField("Window mode (window/external):", "external")
+    config_dialog.show()
     
-    win = psy.visual.Window([1280, 720], monitor='testMonitor', screen=0, fullscr=False)
-    #, winType="pyglet")
-
-    # At DBIC, with Mac OS X, the scanner projector wants to be 1280x1024 and 60Hz
-    # Use the following line to run this experiment fullscreen on a 2nd monitor:
-    #win = visual.Window([1280, 1024], monitor='testMonitor', screen=1, fullscr=True)
+    # Configure!
+    if config_dialog.OK:
+        subject_id = config_dialog.data[0]
+        run_number = int(config_dialog.data[1])
+        
+        # This could be more flexible, but this is how it is going to work now.
+        script_path = "bb_scripts_final/14/bb_script_14_run_{0}.txt".format(run_number)
+        print("Set script path: {0}".format(script_path))
+        
+        # Specify our location
+        # (For now this just controls how we handle receipt of the _first_ 
+        #  trigger, but in the future it should control how we handle all 
+        #  scanner triggers.)
+        if config_dialog.data[2] == u'dbic':
+            location = "dbic"
+        elif config_dialog.data[2] == u'serial':
+            location = "usb-serial-simulation"
+        elif config_dialog.data[2] == u'psychopy':
+            location = "psychopy-simulation"
+        
+        # Choose whether we will make our main visual.Window instance on an
+        # external monitor
+        if config_dialog.data[3] == u'window':
+            windowed = True
+        elif config_dialog.data[3] == u'external':
+            windowed = False
+    else:
+        sys.exit("Canceled at configuration dialog.")
+    
+    # In the future maybe consider winType="pyglet"?
+    if windowed:
+        win = psy.visual.Window([1280, 720], monitor='testMonitor', screen=0, fullscr=False)
+    else:
+        # At DBIC, with Mac OS X, the scanner projector likes 1280x1024, 60Hz
+        win = visual.Window([1280, 1024], monitor='testMonitor', screen=1, fullscr=True)
+    
     clock = psy.core.Clock()
 
     loading_message = psy.visual.TextStim(win, pos=[0,0], text="Loading...")
@@ -150,7 +185,7 @@ def run_experiment():
     # This global will hold all of the events we will display
     # The EventList needs to know about the Window so we can preload the stimuli
     events = EventList(win)
-    events.read_from_file('stim_script_run_1.txt')
+    events.read_from_file(script_path)
 
     if(events.has_overlapping_events()):
         print("WARNING: Overlapping events detected in input")
@@ -166,12 +201,6 @@ def run_experiment():
     # Find the duration of the event list in TRs/volumes
     fmri_settings['volumes'] = math.ceil(float(events.dur()) / tr_dur)
     
-    # Specify our location
-    # (For now this just controls how we handle receipt of the _first_ 
-    #  trigger, but in the future it should control how we handle all 
-    #  scanner triggers.)
-    location = "usb-serial-simulation"
-    #location = "dbic"
 
     if location == "psychopy-simulation":
         # The experiment starts in sync with the first scanner trigger.
@@ -220,20 +249,20 @@ def run_experiment():
         
     t0 = time.time()
     
+    mgr = multiprocessing.Manager()
+    shared_keys = mgr.list()
+    
     # Spawn a second process to do TR and input logging
     if location == "dbic" or location == "usb-serial-simulation":
-        log_filename = u'{0}_log.txt'.format(subject_id)
-        log_tr_filename = u'{0}_tr_log.txt'.format(subject_id)
+        log_filename = u'{0}_run_{1}_log.txt'.format(subject_id, run_number)
+        log_tr_filename = u'{0}_run_{1}_tr_log.txt'.format(subject_id, run_number)
         log_proc = multiprocessing.Process(target=log_serial_input, args=(log_filename, log_tr_filename, t0))
     elif location == "psychopy-simulation":
-        log_filename = u'{0}_key_log.txt'.format(subject_id)
-        log_tr_filename = u'{0}_tr_key_log.txt'.format(subject_id)
+        log_filename = u'{0}_run_{1}_key_log.txt'.format(subject_id, run_number)
+        log_tr_filename = u'{0}_run_{1}_tr_key_log.txt'.format(subject_id, run_number)
         log_proc = multiprocessing.Process(target=log_keyboard_input, args=(log_filename, log_tr_filename, t0, shared_keys))
     log_proc.daemon = True
     log_proc.start()
-
-    mgr = multiprocessing.Manager()
-    shared_keys = mgr.list()
 
     # Reset the clock after getting the scanner trigger
     clock.reset()
