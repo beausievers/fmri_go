@@ -172,11 +172,23 @@ def run_experiment():
 
     # In the future maybe consider winType="pyglet"?
     if windowed:
-        win = psy.visual.Window([1280, 720], monitor='testMonitor', screen=0, fullscr=False)
+        win = psy.visual.Window(
+            [1280, 720],
+            monitor='testMonitor',
+            screen=0,
+            fullscr=False,
+            color=-1
+        )
     else:
         # At DBIC, with Mac OS X, the scanner projector likes 1280x1024, 60Hz
         # As of 2016-11-06
-        win = visual.Window([1280, 1024], monitor='testMonitor', screen=0, fullscr=True)
+        win = visual.Window(
+            [1280, 1024],
+            monitor='testMonitor',
+            screen=0,
+            fullscr=True,
+            color=-1
+        )
 
     clock = psy.core.Clock()
 
