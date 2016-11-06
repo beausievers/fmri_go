@@ -115,8 +115,11 @@ class SoundEvent(Event):
 class MovieEvent(Event):
     def __init__(self, start, dur, stim_str, win):
         super(MovieEvent, self).__init__(start, dur, stim_str, win)
-        self.stim = visual.MovieStim(self.win, self.stim_str,
-                                    flipVert=False, loop=False)
+        self.stim = visual.MovieStim3(self.win, 
+                                      self.stim_str,
+                                      flipVert=False,
+                                      noAudio=True,
+                                      loop=False)
         
     def display(self, clock, end_time):
         # Terminate and hand control back to fmri_go.py if either the movie ends
